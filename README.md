@@ -62,5 +62,17 @@ Each dimension is owned by one team member:
 This dataset is limited to already high-performing titles. Findings reflect patterns among top-grossing games and may not generalize to the broader Steam library.
 
 ---
+ 
+## progress log
+ 
+| date | milestone | status | file |
+|------|-----------|--------|--------|
+| 04/27/2026 | Data Preparation | ✅ Completed | [Progress Log #1](./ProjectProgressLog1_cvaranko.pdf) |
+| 05/11/2026 | Model Design | ✅ Completed | [Progress Log #2](./ProjectProgressLog2_cvaranko.pdf) |
+| 05/26/2026 | Model Implementation | ⌛ In Progress | - |
+| 06/01/2026 | Model Improvement | 🔜 Not Started | - |
+| 06/08/2026 | PowerPoint Draft | 🔜 Not Started | - |
+ 
+---
 
-*Project in progress — expected completion June 2026.*
+*Project in progress — expected completion June 21st, 2026.*
