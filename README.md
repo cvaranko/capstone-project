@@ -76,12 +76,13 @@ Each dimension is owned by one team member:
 
 ---
 
-## bi deliverables
+## content
 
-- 📊 Revenue dashboard
-- 💰 Price tier comparison panel
-- 🌲 Feature importance report
-- 📄 Insight brief
+- 📂 Data preparation & cleaning
+- 📊 Dimension analyses
+- 📈 Regression analysis (3 model specifications)
+- 🌲 Random Forest analysis (R² = 0.907)
+- 💡 Business recommendations
 
 ---
 
