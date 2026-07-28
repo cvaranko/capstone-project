@@ -107,8 +107,8 @@ Revenue figures are Gamalytic estimates, not officially reported values. Gamalyt
 | member | dimension |
 |--------|-----------|
 | Carolina Varanko | Price Tier · Regression Analysis |
-| Member #2 | Publisher Class · Random Forest |
-| Member #3 | Review Score Tier |
+| Student #1 | Publisher Class · Random Forest |
+| Student #2 | Review Score Tier |
 
 ---
 
