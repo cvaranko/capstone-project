@@ -7,6 +7,22 @@
 
 ---
 
+## 🌐 live presentation
+
+An interactive, single-page walkthrough of this analysis, built for a portfolio audience, is deployed via GitHub Pages:
+
+**[view the live presentation →](https://cvaranko.github.io/capstone-project/)**
+
+---
+
+## 🔗 companion repository
+
+This repo covers the analysis itself. The data engineering side of the same project, dbt models, transformations, and pipeline logic, lives in a separate repo:
+
+**[capstone-dbt-pipeline →](https://github.com/cvaranko/capstone-dbt-pipeline)**
+
+---
+
 ## overview
 
 A business intelligence initiative analyzing which game attributes are most associated with higher net revenue across Steam games. Using Gamalytic Steam analytics data, the project examines revenue performance patterns across publisher class, pricing, review performance, player engagement, and market demand. Framed for an audience of game developers, publishers, and platform operators looking to understand what separates high-performing titles from the rest.

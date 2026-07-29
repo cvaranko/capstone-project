@@ -1,0 +1,1423 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>The Price of Play: Steam Revenue Capstone</title>
+<meta name="description" content="What makes a Steam game financially successful? A data analytics capstone exploring publisher class, price tier, and review score as revenue drivers across 10,568 games.">
+<link rel="icon" href="data:image/svg+xml,<svg xmlns=%22http://www.w3.org/2000/svg%22 viewBox=%220 0 100 100%22><text y=%22.9em%22 font-size=%2290%22>🎮</text></svg>">
+<meta name="theme-color" content="#070b14">
+<meta name="color-scheme" content="dark">
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@500;600;700&family=Fraunces:ital,opsz,wght@0,9..144,500;1,9..144,500;1,9..144,600&family=Inter:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+  :root{
+    --bg:#070b14;
+    --bg-alt:#0b1120;
+    --surface:#111a2c;
+    --surface-2:#182543;
+    --border:#22304d;
+    --border-soft:#1a2740;
+    --teal:#2dd4bf;
+    --teal-bright:#5eead4;
+    --teal-dim:#0f766e;
+    --teal-glow:rgba(45,212,191,0.14);
+    --gold:#f5b942;
+    --gold-glow:rgba(245,185,66,0.14);
+    --text:#eef2f8;
+    --text-dim:#a9b7cc;
+    --text-mute:#7f8da3;
+    --max:1120px;
+    --radius:14px;
+    --serif-num: 'Space Grotesk', sans-serif;
+    --serif-quote: 'Fraunces', 'Iowan Old Style', serif;
+    --focus-ring: #7ef2e2;
+  }
+
+  /* Visually hidden but available to assistive tech (table captions, etc.) */
+  .sr-only{
+    position:absolute;width:1px;height:1px;padding:0;margin:-1px;
+    overflow:hidden;clip:rect(0,0,0,0);white-space:nowrap;border:0;
+  }
+  .skip-link{
+    position:absolute;left:12px;top:-60px;z-index:1000;
+    background:var(--teal);color:#04140f;font-weight:700;font-size:0.9rem;
+    padding:12px 20px;border-radius:8px;transition:top .2s ease;
+  }
+  .skip-link:focus{top:12px;}
+
+  :focus-visible{outline:2px solid var(--focus-ring);outline-offset:3px;border-radius:4px;}
+  a:focus-visible, button:focus-visible{outline-offset:2px;}
+
+  *,*::before,*::after{box-sizing:border-box;}
+  html{scroll-behavior:smooth;}
+  body{
+    margin:0;
+    background:var(--bg);
+    color:var(--text);
+    font-family:'Inter',system-ui,sans-serif;
+    line-height:1.6;
+    -webkit-font-smoothing:antialiased;
+    overflow-x:hidden;
+  }
+  h1,h2,h3,h4{
+    font-family:'Space Grotesk',sans-serif;
+    margin:0;
+    letter-spacing:-0.01em;
+  }
+  p{margin:0;}
+  a{color:inherit;text-decoration:none;}
+  img,svg{display:block;max-width:100%;}
+  ul{margin:0;padding:0;list-style:none;}
+
+  .wrap{max-width:var(--max);margin:0 auto;padding:0 24px;}
+
+  ::selection{background:var(--teal);color:#04140f;}
+
+  /* ---------- Sticky Nav ---------- */
+  .nav{
+    position:sticky;top:0;z-index:100;
+    border-bottom:1px solid var(--border-soft);
+  }
+  .nav::before{
+    content:'';position:absolute;inset:0;z-index:-1;
+    background:rgba(7,11,20,0.85);
+    backdrop-filter:blur(10px);
+    -webkit-backdrop-filter:blur(10px);
+  }
+  .nav-inner{
+    max-width:var(--max);margin:0 auto;padding:14px 24px;
+    display:flex;align-items:center;justify-content:space-between;gap:24px;
+  }
+  .nav-brand{
+    font-family:'Space Grotesk',sans-serif;font-weight:700;font-size:0.95rem;
+    color:var(--teal-bright);white-space:nowrap;
+    display:flex;align-items:center;gap:8px;
+  }
+  .nav-brand .dot{width:7px;height:7px;border-radius:50%;background:var(--teal);box-shadow:0 0 10px var(--teal);}
+  .nav-links{display:flex;gap:2px;flex-wrap:wrap;}
+  .nav-links a{
+    font-size:0.82rem;font-weight:500;color:var(--text-dim);
+    padding:8px 12px;border-radius:8px;transition:color .2s ease, background .2s ease;
+    white-space:nowrap;
+  }
+  .nav-links a:hover{color:var(--text);background:var(--surface-2);}
+  .nav-links a.active{color:var(--teal-bright);background:var(--teal-glow);}
+  .nav-toggle{
+    display:none;background:none;border:1px solid var(--border);color:var(--text);
+    width:38px;height:38px;border-radius:8px;cursor:pointer;flex-shrink:0;
+    align-items:center;justify-content:center;
+  }
+  .nav-toggle span, .nav-toggle span::before, .nav-toggle span::after{
+    content:'';display:block;width:16px;height:2px;background:var(--text);
+    position:relative;transition:transform .2s ease, opacity .2s ease;
+  }
+  .nav-toggle span::before{position:absolute;top:-5px;}
+  .nav-toggle span::after{position:absolute;top:5px;}
+  .nav-toggle.open span{background:transparent;}
+  .nav-toggle.open span::before{transform:translateY(5px) rotate(45deg);}
+  .nav-toggle.open span::after{transform:translateY(-5px) rotate(-45deg);}
+
+  /* ---------- Reveal ---------- */
+  .reveal{opacity:0;transform:translateY(24px);transition:opacity .7s ease, transform .7s ease;}
+  .reveal.is-visible{opacity:1;transform:translateY(0);}
+  .reveal-delay-1{transition-delay:.08s;}
+  .reveal-delay-2{transition-delay:.16s;}
+  .reveal-delay-3{transition-delay:.24s;}
+  .reveal-delay-4{transition-delay:.32s;}
+
+  /* ---------- Section scaffolding ---------- */
+  section{padding:110px 0;position:relative;}
+  section.alt{background:var(--bg-alt);}
+  .section-head{margin-bottom:56px;max-width:760px;}
+  .eyebrow{
+    display:inline-flex;align-items:center;gap:8px;
+    font-size:0.78rem;font-weight:600;letter-spacing:0.14em;text-transform:uppercase;
+    color:var(--teal);margin-bottom:18px;
+  }
+  .eyebrow::before{content:'';width:22px;height:1px;background:var(--teal);}
+  .big-num{
+    font-family:var(--serif-num);font-weight:700;
+    font-size:clamp(3.5rem,9vw,6.5rem);line-height:0.9;
+    color:transparent;-webkit-text-stroke:1.5px var(--teal-dim);
+    display:block;margin-bottom:8px;
+    background:linear-gradient(180deg, rgba(45,212,191,0.28), rgba(45,212,191,0.02));
+    -webkit-background-clip:text;background-clip:text;
+  }
+  .sec-title{font-size:clamp(1.8rem,3.6vw,2.6rem);font-weight:700;margin-bottom:14px;}
+  .sec-subtitle{font-size:1.05rem;color:var(--teal-bright);font-weight:600;margin-bottom:14px;}
+  .lede{font-size:1.05rem;color:var(--text-dim);max-width:680px;}
+
+  /* ---------- Buttons / tags ---------- */
+  .tag{
+    display:inline-flex;align-items:center;gap:6px;
+    font-size:0.78rem;font-weight:600;letter-spacing:0.04em;
+    padding:6px 14px;border-radius:999px;
+    background:var(--surface-2);border:1px solid var(--border);color:var(--text-dim);
+  }
+  .btn{
+    display:inline-flex;align-items:center;gap:8px;
+    padding:13px 26px;border-radius:10px;font-weight:600;font-size:0.92rem;
+    border:1px solid var(--border);transition:transform .2s ease, border-color .2s ease, background .2s ease;
+  }
+  .btn-primary{background:var(--teal);color:#04140f;border-color:var(--teal);}
+  .btn-primary:hover{transform:translateY(-2px);background:var(--teal-bright);}
+  .btn-ghost{background:transparent;color:var(--text);}
+  .btn-ghost:hover{border-color:var(--teal);color:var(--teal-bright);transform:translateY(-2px);}
+
+  /* ---------- HERO ---------- */
+  .hero{
+    min-height:92vh;display:flex;align-items:center;padding:160px 0 100px;
+    background:
+      radial-gradient(ellipse 80% 60% at 20% 0%, rgba(45,212,191,0.16), transparent 60%),
+      radial-gradient(ellipse 60% 50% at 90% 10%, rgba(245,185,66,0.08), transparent 60%),
+      var(--bg);
+    position:relative;overflow:hidden;
+  }
+  .hero::after{
+    content:'';position:absolute;inset:0;
+    background-image:
+      linear-gradient(rgba(255,255,255,0.025) 1px, transparent 1px),
+      linear-gradient(90deg, rgba(255,255,255,0.025) 1px, transparent 1px);
+    background-size:56px 56px;
+    mask-image:radial-gradient(ellipse 70% 60% at 50% 30%, black, transparent 75%);
+    pointer-events:none;
+  }
+  .hero-inner{position:relative;z-index:1;}
+  .hero-tags{display:flex;flex-wrap:wrap;gap:10px;margin-bottom:28px;}
+  .hero h1{font-size:clamp(2.4rem,6vw,4.4rem);font-weight:700;line-height:1.05;max-width:920px;}
+  .hero h1 .hl{color:var(--teal);}
+  .hero-sub{font-size:clamp(1.05rem,2vw,1.35rem);color:var(--text-dim);margin-top:22px;max-width:640px;font-weight:500;}
+  .hero-tagline{font-size:0.95rem;color:var(--text-mute);margin-top:14px;font-style:italic;}
+  .hero-cta{display:flex;gap:14px;margin-top:44px;flex-wrap:wrap;}
+  .scroll-cue{
+    position:absolute;bottom:36px;left:50%;transform:translateX(-50%);
+    display:flex;flex-direction:column;align-items:center;gap:8px;
+    color:var(--text-mute);font-size:0.72rem;letter-spacing:0.12em;text-transform:uppercase;
+    animation:bob 2.4s ease-in-out infinite;
+  }
+  .scroll-cue svg{width:14px;height:18px;}
+  @keyframes bob{0%,100%{transform:translate(-50%,0);}50%{transform:translate(-50%,8px);}}
+
+  /* ---------- Team ---------- */
+  .team-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:24px;margin-top:8px;}
+  .team-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:32px 26px;transition:transform .25s ease, border-color .25s ease;position:relative;overflow:hidden;
+  }
+  .team-card:hover{transform:translateY(-4px);border-color:var(--teal-dim);}
+  .team-card.self::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:3px;
+    background:linear-gradient(90deg,var(--teal),var(--gold));
+  }
+  .avatar{
+    width:56px;height:56px;border-radius:50%;
+    background:linear-gradient(135deg,var(--teal-glow),var(--gold-glow));
+    border:1px solid var(--border);
+    display:flex;align-items:center;justify-content:center;
+    font-family:var(--serif-num);font-weight:700;font-size:1.2rem;color:var(--teal-bright);
+    margin-bottom:20px;
+  }
+  .team-card h3{font-size:1.2rem;margin-bottom:4px;}
+  .team-role{font-size:0.82rem;color:var(--text-mute);margin-bottom:16px;}
+  .team-focus{font-size:0.9rem;color:var(--text-dim);}
+  .team-focus b{color:var(--teal-bright);font-weight:600;}
+  .badge-self{
+    position:absolute;top:16px;right:16px;font-size:0.66rem;font-weight:700;
+    letter-spacing:0.08em;text-transform:uppercase;color:var(--gold);
+    background:var(--gold-glow);border:1px solid rgba(245,185,66,0.3);
+    padding:4px 9px;border-radius:999px;
+  }
+  .team-foot{margin-top:44px;text-align:center;color:var(--text-mute);font-size:0.85rem;}
+  .agenda{
+    display:flex;flex-wrap:wrap;justify-content:center;gap:10px 22px;margin-top:36px;
+    padding-top:28px;border-top:1px solid var(--border-soft);
+  }
+  .agenda span{font-size:0.82rem;color:var(--text-dim);}
+  .agenda b{color:var(--teal);font-weight:700;}
+
+  /* ---------- Callout / stat cards ---------- */
+  .stat-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin:36px 0;}
+  .stat-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:26px;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .stat-card:hover{transform:translateY(-3px);border-color:var(--teal-dim);box-shadow:0 16px 32px -20px rgba(45,212,191,0.35);}
+  .stat-num{font-family:var(--serif-num);font-weight:700;font-size:2.1rem;color:var(--teal-bright);line-height:1;}
+  .stat-label{font-size:0.85rem;color:var(--text-dim);margin-top:10px;font-weight:600;}
+  .stat-sub{font-size:0.78rem;color:var(--text-mute);margin-top:4px;}
+
+  .callout{
+    background:var(--surface);border:1px solid var(--border);border-left:3px solid var(--teal);
+    border-radius:10px;padding:22px 26px;margin:28px 0;
+  }
+  .callout h4{font-size:0.95rem;color:var(--teal-bright);margin-bottom:8px;font-weight:700;}
+  .callout p{color:var(--text-dim);font-size:0.93rem;}
+  .callout.warn{border-left-color:var(--gold);}
+  .callout.warn h4{color:var(--gold);}
+
+  .two-col{display:grid;grid-template-columns:1fr 1fr;gap:24px;margin:32px 0;}
+  .card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:26px;
+    transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .card:hover{transform:translateY(-3px);border-color:var(--border-soft);box-shadow:0 16px 32px -22px rgba(0,0,0,0.5);}
+  .card h4{font-size:1rem;margin-bottom:12px;color:var(--text);}
+  .card ul li{position:relative;padding-left:18px;margin-bottom:8px;color:var(--text-dim);font-size:0.92rem;}
+  .card ul li::before{content:'';position:absolute;left:0;top:9px;width:6px;height:6px;border-radius:50%;background:var(--teal);}
+  .card p{color:var(--text-dim);font-size:0.92rem;}
+
+  /* ---------- Pull-stat (editorial serif stat highlights) ---------- */
+  .pull-stat{
+    display:flex;align-items:baseline;gap:22px;flex-wrap:wrap;
+    margin:32px 0;padding:10px 0 10px 28px;border-left:3px solid var(--teal);
+    transition:border-color .25s ease;
+  }
+  .pull-stat:hover{border-left-color:var(--teal-bright);}
+  .pull-stat .num{
+    font-family:var(--serif-quote);font-style:italic;font-weight:600;
+    font-size:clamp(2.4rem,5.5vw,3.6rem);line-height:1;color:var(--teal-bright);
+    transition:color .25s ease;
+  }
+  .pull-stat:hover .num{color:#fff;}
+  .pull-stat .cap{font-size:0.95rem;color:var(--text-dim);max-width:360px;}
+  .pull-stat .cap b{color:var(--text);font-weight:600;}
+  .pull-stat.gold{border-left-color:var(--gold);}
+  .pull-stat.gold .num{color:var(--gold);}
+  .pull-stat.gold:hover .num{color:#fff;}
+  .pull-stat.muted{border-left-color:var(--border);}
+  .pull-stat.muted .num{color:var(--text-mute);font-style:normal;opacity:0.9;}
+  .pull-stat.muted:hover .num{color:var(--text-dim);}
+
+  /* ---------- Skills demonstrated ---------- */
+  .skills-grid{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin-top:36px;}
+  .skill-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:24px;transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .skill-card:hover{transform:translateY(-4px);border-color:var(--teal-dim);box-shadow:0 18px 36px -22px rgba(45,212,191,0.3);}
+  .skill-card .skill-icon{
+    width:38px;height:38px;border-radius:10px;background:var(--teal-glow);
+    color:var(--teal-bright);display:flex;align-items:center;justify-content:center;
+    margin-bottom:16px;transition:background .25s ease, transform .25s ease;
+  }
+  .skill-card:hover .skill-icon{background:var(--teal);color:#04140f;transform:scale(1.06);}
+  .skill-card .skill-icon svg{width:20px;height:20px;}
+  .skill-card h4{font-size:1rem;margin-bottom:8px;}
+  .skill-card p{color:var(--text-dim);font-size:0.88rem;}
+
+  /* ---------- Tables ---------- */
+  .table-scroll{overflow-x:auto;margin:28px 0;border:1px solid var(--border);border-radius:var(--radius);}
+  table{width:100%;border-collapse:collapse;font-size:0.88rem;min-width:560px;}
+  thead th{
+    background:var(--surface-2);color:var(--teal-bright);text-align:left;
+    padding:14px 16px;font-weight:600;font-size:0.78rem;letter-spacing:0.03em;text-transform:uppercase;
+    white-space:nowrap;
+  }
+  tbody td{padding:13px 16px;border-top:1px solid var(--border-soft);color:var(--text-dim);white-space:nowrap;}
+  tbody tr:hover td{background:rgba(45,212,191,0.04);color:var(--text);}
+  tbody td:first-child{color:var(--text);font-weight:600;}
+
+  /* ---------- Chart.js cards ---------- */
+  .chart-card{
+    margin:28px 0;border:1px solid var(--border);border-radius:var(--radius);
+    background:var(--surface);padding:24px 24px 20px;
+    transition:border-color .25s ease, box-shadow .25s ease;
+  }
+  .chart-card:hover{border-color:var(--teal-dim);box-shadow:0 20px 40px -26px rgba(45,212,191,0.3);}
+  .chart-card.featured:hover{border-color:rgba(245,185,66,0.55);box-shadow:0 20px 40px -26px rgba(245,185,66,0.35);}
+  .chart-card .chart-canvas-wrap{position:relative;height:300px;}
+  .chart-card.large .chart-canvas-wrap{height:380px;}
+  .chart-card .chart-caption{margin-top:14px;font-size:0.78rem;color:var(--text-mute);text-align:center;}
+  .chart-card.featured{
+    background:linear-gradient(135deg, var(--surface), var(--surface-2));
+    border:1px solid rgba(245,185,66,0.35);
+    box-shadow:0 0 0 1px rgba(245,185,66,0.06), 0 24px 48px -24px rgba(245,185,66,0.25);
+  }
+
+  /* ---------- Dimension sections ---------- */
+  .dim-header{display:flex;align-items:flex-start;justify-content:space-between;gap:24px;flex-wrap:wrap;}
+  .dim-title-block{max-width:700px;}
+  .question-box{
+    display:flex;align-items:center;gap:16px;background:var(--surface);
+    border:1px solid var(--border);border-radius:var(--radius);padding:20px 26px;margin:32px 0;
+  }
+  .question-box .qmark{
+    font-family:var(--serif-num);font-size:2rem;color:var(--teal);font-weight:700;line-height:1;flex-shrink:0;
+  }
+  .question-box p{font-size:1rem;color:var(--text);font-weight:500;}
+
+  .takeaway{
+    margin-top:32px;background:linear-gradient(135deg, var(--teal-glow), transparent);
+    border:1px solid var(--teal-dim);border-radius:var(--radius);padding:26px 30px;
+  }
+  .takeaway h4{color:var(--teal-bright);font-size:0.95rem;margin-bottom:8px;letter-spacing:0.03em;text-transform:uppercase;font-size:0.78rem;}
+  .takeaway p{color:var(--text);font-size:0.98rem;}
+
+  /* ---------- Featured (Dimension 2) ---------- */
+  .featured{position:relative;}
+  .featured::before{
+    content:'';position:absolute;top:0;left:0;right:0;height:340px;
+    background:radial-gradient(ellipse 70% 100% at 50% 0%, rgba(245,185,66,0.09), transparent 70%);
+    pointer-events:none;
+  }
+  .featured-badge{
+    display:inline-flex;align-items:center;gap:8px;margin-bottom:18px;
+    font-size:0.76rem;font-weight:700;letter-spacing:0.08em;text-transform:uppercase;
+    color:var(--gold);background:var(--gold-glow);border:1px solid rgba(245,185,66,0.35);
+    padding:7px 16px;border-radius:999px;
+  }
+  .featured-badge svg{width:13px;height:13px;}
+  .featured .big-num{
+    -webkit-text-stroke:1.5px var(--gold);
+    background:linear-gradient(180deg, rgba(245,185,66,0.32), rgba(245,185,66,0.02));
+    -webkit-background-clip:text;background-clip:text;
+  }
+  .featured .question-box{border-left:3px solid var(--gold);}
+  .featured .question-box .qmark{color:var(--gold);}
+  .hero-stat{
+    background:linear-gradient(135deg, var(--surface), var(--surface-2));
+    border:1px solid rgba(245,185,66,0.3);border-radius:var(--radius);
+    padding:34px 36px;margin:32px 0;display:flex;align-items:center;gap:28px;flex-wrap:wrap;
+    transition:border-color .25s ease, transform .25s ease;
+  }
+  .hero-stat:hover{transform:translateY(-3px);border-color:rgba(245,185,66,0.55);}
+  .hero-stat .num{font-family:var(--serif-quote);font-style:italic;font-size:clamp(2.6rem,6vw,3.4rem);font-weight:600;color:var(--gold);line-height:1;}
+  .hero-stat .desc{color:var(--text-dim);font-size:0.95rem;max-width:420px;}
+  .hero-stat .desc b{color:var(--text);}
+  .featured .takeaway{border-color:rgba(245,185,66,0.4);background:linear-gradient(135deg, var(--gold-glow), transparent);}
+  .featured .takeaway h4{color:var(--gold);}
+
+  /* ---------- Modeling ---------- */
+  .model-formula{
+    font-family:'Space Grotesk',monospace;background:var(--bg);border:1px solid var(--border);
+    border-radius:10px;padding:18px 24px;font-size:0.95rem;color:var(--teal-bright);margin:24px 0;
+    overflow-x:auto;white-space:nowrap;
+  }
+  .subsection{margin-top:64px;padding-top:56px;border-top:1px solid var(--border-soft);}
+  .subsection-label{font-size:0.8rem;font-weight:700;color:var(--teal);letter-spacing:0.1em;text-transform:uppercase;margin-bottom:10px;}
+
+  .perf-row{display:grid;grid-template-columns:repeat(3,1fr);gap:20px;margin:32px 0;}
+  .perf-card{
+    text-align:center;background:var(--surface);border:1px solid var(--border);
+    border-radius:var(--radius);padding:30px 20px;
+    transition:transform .25s ease, border-color .25s ease;
+  }
+  .perf-card:hover{transform:translateY(-3px);border-color:var(--teal-dim);}
+  .perf-card .num{font-family:var(--serif-num);font-size:2.6rem;font-weight:700;color:var(--teal-bright);}
+  .perf-card .label{font-size:0.82rem;font-weight:600;color:var(--text);margin-top:8px;}
+  .perf-card .sub{font-size:0.76rem;color:var(--text-mute);margin-top:4px;}
+
+  /* ---------- Recommendations ---------- */
+  .rec-grid{display:grid;grid-template-columns:repeat(2,1fr);gap:22px;margin-top:36px;}
+  .rec-card{
+    background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);
+    padding:28px;position:relative;
+    transition:transform .25s ease, border-color .25s ease, box-shadow .25s ease;
+  }
+  .rec-card:hover{transform:translateY(-4px);border-color:var(--teal-dim);box-shadow:0 18px 36px -22px rgba(45,212,191,0.28);}
+  .rec-num{
+    font-family:var(--serif-num);font-weight:700;font-size:1.1rem;color:#04140f;
+    background:var(--teal);width:34px;height:34px;border-radius:9px;
+    display:flex;align-items:center;justify-content:center;margin-bottom:18px;
+  }
+  .rec-card h4{font-size:1.05rem;margin-bottom:10px;}
+  .rec-card p{color:var(--text-dim);font-size:0.92rem;}
+
+  /* ---------- Closing ---------- */
+  .closing{
+    background:
+      radial-gradient(ellipse 70% 70% at 50% 100%, rgba(45,212,191,0.13), transparent 65%),
+      var(--bg-alt);
+    text-align:center;padding:130px 0 90px;
+  }
+  .closing .eyebrow{justify-content:center;}
+  .closing .eyebrow::before{display:none;}
+  .closing h2{font-size:clamp(2rem,5vw,3.2rem);font-weight:700;max-width:760px;margin:0 auto;}
+  .closing .lede{margin:20px auto 0;text-align:center;}
+  .link-row{display:flex;justify-content:center;gap:16px;margin-top:44px;flex-wrap:wrap;}
+  .link-card{
+    display:flex;align-items:center;gap:12px;background:var(--surface);border:1px solid var(--border);
+    border-radius:12px;padding:18px 28px;transition:transform .2s ease, border-color .2s ease;min-width:200px;
+  }
+  .link-card:hover{transform:translateY(-3px);border-color:var(--teal);}
+  .link-card svg{width:22px;height:22px;color:var(--teal-bright);flex-shrink:0;}
+  .link-card .lc-title{font-weight:600;font-size:0.92rem;}
+  .link-card .lc-sub{font-size:0.75rem;color:var(--text-mute);}
+  footer{padding:32px 0;text-align:center;color:var(--text-mute);font-size:0.8rem;border-top:1px solid var(--border-soft);}
+  footer .sep{margin:0 8px;opacity:0.5;}
+
+  /* ---------- Responsive ---------- */
+  @media (max-width:900px){
+    .team-grid{grid-template-columns:1fr;}
+    .stat-row{grid-template-columns:1fr;}
+    .two-col{grid-template-columns:1fr;}
+    .perf-row{grid-template-columns:1fr;}
+    .rec-grid{grid-template-columns:1fr;}
+    .skills-grid{grid-template-columns:1fr;}
+  }
+  @media (max-width:820px){
+    .nav-toggle{display:flex;}
+    .nav-links{
+      position:fixed;top:65px;left:0;right:0;bottom:0;
+      background:var(--bg);flex-direction:column;gap:0;
+      padding:12px 24px 40px;overflow-y:auto;
+      transform:translateX(100%);transition:transform .3s ease;
+    }
+    .nav-links.open{transform:translateX(0);}
+    .nav-links a{padding:16px 4px;border-bottom:1px solid var(--border-soft);font-size:1rem;border-radius:0;}
+    section{padding:80px 0;}
+  }
+  @media (max-width:520px){
+    .wrap{padding:0 18px;}
+    .hero{padding:140px 0 80px;min-height:auto;}
+    .hero-cta{flex-direction:column;align-items:stretch;}
+    .hero-cta .btn{justify-content:center;}
+    .big-num{font-size:3.4rem;}
+    .question-box{flex-direction:column;align-items:flex-start;}
+    .hero-stat{flex-direction:column;text-align:left;}
+  }
+</style>
+</head>
+<body>
+
+<a href="#main-content" class="skip-link">Skip to main content</a>
+
+<!-- ================= NAV ================= -->
+<nav class="nav" aria-label="Primary">
+  <div class="nav-inner">
+    <a href="#hero" class="nav-brand"><span class="dot" aria-hidden="true"></span>The Price of Play</a>
+    <div class="nav-links" id="navLinks">
+      <a href="#team">Team</a>
+      <a href="#skills">Skills</a>
+      <a href="#intro">01. Intro</a>
+      <a href="#dim1">Publisher</a>
+      <a href="#dim2">Price Tier</a>
+      <a href="#dim3">Reviews</a>
+      <a href="#modeling">03. Modeling</a>
+      <a href="#recommendations">04. Recs</a>
+    </div>
+    <button class="nav-toggle" id="navToggle" aria-label="Toggle menu" aria-expanded="false" aria-controls="navLinks"><span></span></button>
+  </div>
+</nav>
+
+<main id="main-content">
+
+<!-- ================= HERO ================= -->
+<section class="hero" id="hero">
+  <div class="wrap hero-inner">
+    <div class="hero-tags reveal">
+      <span class="tag">DATA 485</span>
+      <span class="tag">Data Analytics Capstone</span>
+      <span class="tag">Spring 2026</span>
+      <span class="tag">Group 5</span>
+    </div>
+    <h1 class="reveal reveal-delay-1">The Price of Play: <span class="hl">What Makes a Steam Game Financially Successful?</span></h1>
+    <p class="hero-sub reveal reveal-delay-2">What Drives Financial Success on Steam?</p>
+    <p class="hero-tagline reveal reveal-delay-2">An analysis of 10,568 Steam titles, examining publisher class, pricing strategy, and review score as revenue drivers.</p>
+    <div class="hero-cta reveal reveal-delay-3">
+      <a href="#intro" class="btn btn-primary">Explore the Findings</a>
+      <a href="#team" class="btn btn-ghost">Meet the Team</a>
+    </div>
+  </div>
+  <div class="scroll-cue">
+    <span>Scroll</span>
+    <svg viewBox="0 0 14 18" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M7 1V17M7 17L1 11M7 17L13 11" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round"/></svg>
+  </div>
+</section>
+
+<!-- ================= TEAM ================= -->
+<section id="team">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Group 5</div>
+      <h2 class="sec-title">Meet the Team</h2>
+      <p class="lede">Three analysts, three revenue dimensions, one shared question: what actually drives financial success on Steam?</p>
+    </div>
+
+    <div class="team-grid">
+      <div class="team-card reveal reveal-delay-1">
+        <div class="avatar"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c1.2-3.8 4.4-6 8-6s6.8 2.2 8 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <h3>Student 1</h3>
+        <div class="team-role">Data Analytics</div>
+        <p class="team-focus"><b>Dimension 1</b> (Publisher Class) · Random Forest · Introduction</p>
+      </div>
+      <div class="team-card self reveal reveal-delay-2">
+        <span class="badge-self">This Page</span>
+        <div class="avatar">CV</div>
+        <h3>Carolina Varanko</h3>
+        <div class="team-role">Data Analytics</div>
+        <p class="team-focus"><b>Dimension 2</b> (Price Tier) · Regression Analysis · Recommendations</p>
+      </div>
+      <div class="team-card reveal reveal-delay-3">
+        <div class="avatar"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" width="22" height="22" aria-hidden="true"><circle cx="12" cy="8" r="4" stroke="currentColor" stroke-width="1.6"/><path d="M4 20c1.2-3.8 4.4-6 8-6s6.8 2.2 8 6" stroke="currentColor" stroke-width="1.6" stroke-linecap="round"/></svg></div>
+        <h3>Student 2</h3>
+        <div class="team-role">Data Analytics</div>
+        <p class="team-focus"><b>Dimension 3</b> (Review Score) · Data Prep &amp; Transformation</p>
+      </div>
+    </div>
+
+    <div class="agenda reveal">
+      <span><b>01</b> Introduction &amp; Data</span>
+      <span><b>02</b> Dimension Analyses</span>
+      <span><b>03</b> Predictive Modeling</span>
+      <span><b>04</b> Recommendations</span>
+    </div>
+    <p class="team-foot reveal">Group 5 · DATA 485 · Data Analytics Capstone</p>
+  </div>
+</section>
+
+<!-- ================= SKILLS DEMONSTRATED ================= -->
+<section class="alt" id="skills">
+  <div class="wrap">
+    <div class="section-head reveal">
+      <div class="eyebrow">Toolkit</div>
+      <h2 class="sec-title">Skills Demonstrated</h2>
+      <p class="lede">The statistical methods, modeling techniques, and tools behind this analysis.</p>
+    </div>
+
+    <div class="skills-grid">
+      <div class="skill-card reveal reveal-delay-1">
+        <div class="skill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M6 4h6a4 4 0 0 1 0 8H6V4zm0 8 6 8M9 12h3" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/></svg></div>
+        <h4>R</h4>
+        <p>Primary language for data cleaning, transformation, and every statistical model in this project.</p>
+      </div>
+      <div class="skill-card reveal reveal-delay-2">
+        <div class="skill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><circle cx="5" cy="17" r="1.6" fill="currentColor"/><circle cx="10" cy="13" r="1.6" fill="currentColor"/><circle cx="14" cy="15" r="1.6" fill="currentColor"/><circle cx="19" cy="7" r="1.6" fill="currentColor"/><path d="M4 19 20 5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h4>Regression Analysis</h4>
+        <p>Multiple linear regression isolating the independent effects of price, playtime, and publisher class on revenue.</p>
+      </div>
+      <div class="skill-card reveal reveal-delay-3">
+        <div class="skill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M12 3v6M12 9 7 14M12 9l5 5M7 14v7M17 14v7M7 14H4v4M17 14h3v4" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><circle cx="12" cy="4.5" r="1.6" fill="currentColor"/></svg></div>
+        <h4>Random Forest</h4>
+        <p>A 500-tree ensemble model, validated on a held-out test split, reaching 90.7% R² on unseen data.</p>
+      </div>
+      <div class="skill-card reveal reveal-delay-1">
+        <div class="skill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M3 18c3-8 6-12 9-12s6 4 9 12" stroke="currentColor" stroke-width="1.7" stroke-linecap="round" stroke-linejoin="round"/><path d="M3 18h18" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h4>Statistical Testing</h4>
+        <p>Welch ANOVA and Tukey HSD post-hoc testing to confirm which group differences are statistically significant.</p>
+      </div>
+      <div class="skill-card reveal reveal-delay-2">
+        <div class="skill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><path d="M4 4h16l-6 8v6l-4 2v-8L4 4z" stroke="currentColor" stroke-width="1.7" stroke-linejoin="round"/></svg></div>
+        <h4>Data Cleaning &amp; Transformation</h4>
+        <p>Log and square-root transformations to normalize five skewed variables ahead of statistical testing.</p>
+      </div>
+      <div class="skill-card reveal reveal-delay-3">
+        <div class="skill-icon" aria-hidden="true"><svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg"><rect x="3.5" y="3.5" width="17" height="17" rx="2" stroke="currentColor" stroke-width="1.6"/><path d="M8 17V11M12.5 17V7M17 17v-5" stroke="currentColor" stroke-width="1.7" stroke-linecap="round"/></svg></div>
+        <h4>Tableau</h4>
+        <p>Dashboard development for stakeholder-facing exploration of revenue drivers.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 01 INTRODUCTION ================= -->
+<section class="alt" id="intro">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="big-num reveal">01.</span>
+      <h2 class="sec-title reveal">Introduction: The Price of Play</h2>
+      <p class="lede reveal reveal-delay-1">
+        The video game industry has grown into one of the most profitable sectors of digital
+        entertainment, a global business shaped by software development, consumer behavior,
+        pricing strategies, reviews, and long-term player engagement. Understanding what drives
+        revenue has become increasingly valuable for developers, publishers, investors, and
+        platform stakeholders.
+      </p>
+      <p class="lede reveal reveal-delay-2" style="margin-top:16px;">
+        Steam is one of the largest and most influential PC gaming storefronts, an ecosystem
+        for discovery, recommendations, and commercial success. Steam performance can strongly
+        influence visibility, audience reach, and financial outcomes for PC titles.
+      </p>
+    </div>
+
+    <div class="question-box reveal">
+      <span class="qmark">?</span>
+      <p>What factors are most associated with financial success among top-performing Steam games? Rather than asking which games earned the most, this project explores <em>why</em> certain games outperform others.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="card reveal reveal-delay-1">
+        <h4>Factors Examined</h4>
+        <ul>
+          <li>Publisher classification (AAA, AA, Indie)</li>
+          <li>Price tier and pricing strategy</li>
+          <li>Review score performance</li>
+          <li>Player engagement (average playtime)</li>
+          <li>Copies sold and market share</li>
+        </ul>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <h4>Approach</h4>
+        <p>This capstone uses Gamalytic Steam analytics data to examine revenue performance patterns across 10,638 games. The project applies data cleaning, descriptive statistics, regression, Random Forest modeling, and dashboard development to identify key revenue drivers.</p>
+      </div>
+    </div>
+
+    <div class="stat-row reveal">
+      <div class="stat-card">
+        <div class="stat-num">10,568</div>
+        <div class="stat-label">Games Analyzed</div>
+        <div class="stat-sub">After cleaning, from a base population of 10,638</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">Gamalytic</div>
+        <div class="stat-label">Steam Analytics API</div>
+        <div class="stat-sub">Aggregates Steam's public API + other public data</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">9</div>
+        <div class="stat-label">Key Variables</div>
+        <div class="stat-sub">Revenue, price, playtime, review score/count, wishlists, publisher class, price &amp; review tier</div>
+      </div>
+    </div>
+
+    <div class="callout warn">
+      <h4>Scope &amp; Limitations</h4>
+      <p>This analysis uses Gamalytic Steam analytics data, including estimated revenue, sales, pricing, review, wishlist, and playtime fields. Results should be interpreted as market-performance estimates, not official Steam financial records. Gamalytic reports 77% of individual revenue estimates within a 30% margin of error, 98% within 50%, and roughly 99% accuracy in aggregate. The analysis identifies patterns across publisher, pricing, review, and engagement dimensions, but does not include outside factors such as marketing budget, franchise strength, streamer exposure, or platform visibility. The base population was pre-filtered to established titles (500+ reviews, revenue &gt; 0, price &gt; 0), which excludes free-to-play games.</p>
+    </div>
+
+    <h4 style="margin-top:48px;margin-bottom:8px;font-size:1.05rem;" class="reveal">Data Cleaning &amp; Transformation</h4>
+    <p class="lede reveal" style="margin-bottom:8px;">The dataset contained 57 games with a missing value, dropped along with games from "Hobbyist" publishers, leaving 10,568 rows. Five variables exhibited moderate to substantial skewness; log10, square root, and reflected square root transformations were applied to normalize distributions.</p>
+
+    <div class="table-scroll reveal">
+      <table>
+        <caption class="sr-only">Skewed variables, the transformation applied to each, and skewness before and after</caption>
+        <thead>
+          <tr><th>Variable</th><th>Skew Issue</th><th>Transformation</th><th>Skew Before</th><th>Skew After</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>copiesSold</td><td>Substantially positive</td><td>log10(copiesSold)</td><td>13.28</td><td>0.83</td></tr>
+          <tr><td>revenue</td><td>Substantially positive</td><td>log10(revenue)</td><td>13.52</td><td>0.47</td></tr>
+          <tr><td>avgPlaytime</td><td>Substantially positive, one zero</td><td>log10(avgPlaytime + 1)</td><td>1.56</td><td>0.69</td></tr>
+          <tr><td>price</td><td>Moderately positive, zeros</td><td>sqrt(price)</td><td>1.58</td><td>0.55</td></tr>
+          <tr><td>reviewScore</td><td>Moderately negative</td><td>sqrt(k − reviewScore)</td><td>−1.39</td><td>0.53</td></tr>
+        </tbody>
+      </table>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 DIMENSION 1: PUBLISHER CLASS ================= -->
+<section id="dim1">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="big-num reveal">02.</span>
+      <div class="eyebrow reveal">Dimension 1</div>
+      <h2 class="sec-title reveal">Publisher Class &amp; Revenue Performance</h2>
+      <p class="sec-subtitle reveal">AAA vs. AA vs. Indie</p>
+    </div>
+
+    <div class="question-box reveal">
+      <span class="qmark">?</span>
+      <p>Does publisher scale determine financial success on Steam?</p>
+    </div>
+
+    <h4 style="margin-bottom:4px;font-size:1rem;" class="reveal">Dataset Composition: Volume vs. Revenue</h4>
+    <p class="lede reveal" style="margin-bottom:8px;">Indie games dominate the Steam marketplace by sheer count, yet AAA and AA titles capture the vast majority of revenue. The filtered dataset included 10,580 games across three publisher classes.</p>
+
+    <div class="stat-row reveal">
+      <div class="stat-card">
+        <div class="stat-num">70.3%</div>
+        <div class="stat-label">Indie Share</div>
+        <div class="stat-sub">7,440 titles, 19.5% of revenue (~$12.0B)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">20.0%</div>
+        <div class="stat-label">AA Share</div>
+        <div class="stat-sub">2,112 titles, 36.2% of revenue (~$22.2B)</div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-num">9.7%</div>
+        <div class="stat-label">AAA Share</div>
+        <div class="stat-sub">1,028 titles, 44.3% of revenue (~$27.2B)</div>
+      </div>
+    </div>
+
+    <div class="two-col">
+      <div class="chart-card reveal">
+        <div class="chart-canvas-wrap"><canvas id="chart-pubclass-composition" role="img" aria-label="Donut chart of dataset composition by publisher class"></canvas></div>
+        <p class="chart-caption">Dataset composition by publisher class (share of titles)</p>
+      </div>
+      <div class="chart-card reveal reveal-delay-1">
+        <div class="chart-canvas-wrap"><canvas id="chart-pubclass-revenue-share" role="img" aria-label="Donut chart of revenue share by publisher class"></canvas></div>
+        <p class="chart-caption">Revenue share by publisher class (share of total revenue)</p>
+      </div>
+    </div>
+
+    <div class="callout reveal">
+      <h4>Revenue Tells a Different Story</h4>
+      <p>Median revenue reinforces the gap: AAA ~$5.1M · AA ~$1.4M · Indie ~$407.2K.</p>
+    </div>
+
+    <div class="pull-stat reveal">
+      <div class="num">12.6×</div>
+      <div class="cap">What the typical <b>AAA</b> game earns in median revenue over the typical <b>Indie</b> game.</div>
+    </div>
+
+    <div class="chart-card reveal">
+      <div class="chart-canvas-wrap"><canvas id="chart-pubclass-median-revenue" role="img" aria-label="Bar chart of median revenue by publisher class"></canvas></div>
+      <p class="chart-caption">Median revenue by publisher class</p>
+    </div>
+
+    <div class="two-col">
+      <div class="card reveal reveal-delay-1">
+        <h4>Statistical Support</h4>
+        <p>Welch ANOVA: F = 1095.061, p &lt; 0.001. Publisher class had a statistically significant relationship with mean log revenue. Because groups had unequal variances, Welch ANOVA was used as the main test, and all pairwise comparisons were significant. Publisher class remained meaningful after controlling for price, review score, and average playtime in regression.</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <h4>Correlation Highlights</h4>
+        <p>Sqrt price had the strongest relationship with log revenue, followed by log average playtime. Review score had a much weaker relationship. Pricing power and engagement were stronger revenue signals than review quality alone.</p>
+      </div>
+    </div>
+
+    <div class="takeaway reveal">
+      <h4>Key Takeaway</h4>
+      <p>Publisher class is a real revenue divider in the Steam marketplace. Indie leads in title count, AAA leads in revenue power, and AA sits between the two, stronger than Indie but below AAA.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 DIMENSION 2: PRICE TIER (FEATURED) ================= -->
+<section class="alt featured" id="dim2">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="featured-badge reveal">
+        <svg viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" aria-hidden="true"><path d="M12 2l2.9 6.5L22 9.3l-5 4.8 1.2 7-6.2-3.6L5.8 21l1.2-7-5-4.8 7.1-.8L12 2z" fill="currentColor"/></svg>
+        Carolina's Individual Analysis
+      </span>
+      <span class="big-num reveal">02.</span>
+      <div class="eyebrow reveal">Dimension 2</div>
+      <h2 class="sec-title reveal">Price Tier</h2>
+      <p class="sec-subtitle reveal">Under $20 · $20–$40 · $40+</p>
+    </div>
+
+    <div class="question-box reveal">
+      <span class="qmark">?</span>
+      <p>Which pricing strategy generates the most revenue on Steam?</p>
+    </div>
+
+    <p class="lede reveal">Revenue figures shown in actual dollars across three price tiers in the expanded dataset (n = 10,638).</p>
+
+    <div class="table-scroll reveal">
+      <table>
+        <caption class="sr-only">Descriptive statistics by price tier: count, share of dataset, mean revenue, median revenue, and mean log revenue</caption>
+        <thead>
+          <tr><th>Price Tier</th><th>Count</th><th>% of Dataset</th><th>Mean Revenue</th><th>Median Revenue</th><th>Mean Log Revenue</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Under $20</td><td>7,985</td><td>75.1%</td><td>$2,547,191</td><td>$392,892</td><td>5.67</td></tr>
+          <tr><td>$20–$40</td><td>2,132</td><td>20.0%</td><td>$10,723,926</td><td>$2,056,084</td><td>6.40</td></tr>
+          <tr><td>$40+</td><td>521</td><td>4.9%</td><td>$35,297,188</td><td>$7,354,687</td><td>6.93</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="hero-stat reveal">
+      <div class="num">r = 0.62</div>
+      <div class="desc">This is the correlation between <b>sqrt(price)</b> and <b>log(revenue)</b>, the <b>strongest single correlate of revenue in the entire project</b>. Price is one of the clearest drivers of financial success on Steam.</div>
+    </div>
+
+    <div class="chart-card featured large reveal">
+      <div class="chart-canvas-wrap"><canvas id="chart-pricetier-mean-log-revenue" role="img" aria-label="Bar chart of mean log revenue by price tier"></canvas></div>
+      <p class="chart-caption">Mean log revenue by price tier. Hover a bar for the exact log value alongside the real mean and median dollar figures.</p>
+    </div>
+
+    <div class="two-col">
+      <div class="card reveal reveal-delay-1">
+        <h4>Statistical Testing</h4>
+        <p>One-way ANOVA: F(2, 10635) = 1481, p &lt; 2e-16. All three pairwise Tukey comparisons were significant (p ≈ 0 for each). Every price tier generates a meaningfully different revenue outcome.</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <h4>Scale of the Gap</h4>
+        <p>The $40+ tier earns far more than the Under $20 tier, despite representing under 5% of all titles in the dataset.</p>
+      </div>
+    </div>
+
+    <div class="pull-stat gold reveal">
+      <div class="num">14×</div>
+      <div class="cap">The mean revenue of a <b>$40+</b> game over a game priced <b>Under $20</b>.</div>
+    </div>
+
+    <div class="takeaway reveal">
+      <h4>Key Takeaway</h4>
+      <p>Premium pricing wins. $40+ games post the highest average earnings and the widest range of outcomes. But the Under $20 tier, which makes up 75% of all games, consistently underperforms every other tier. Low price alone is the weakest revenue strategy on Steam.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 02 DIMENSION 3: REVIEW SCORE ================= -->
+<section id="dim3">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="big-num reveal">02.</span>
+      <div class="eyebrow reveal">Dimension 3</div>
+      <h2 class="sec-title reveal">Review Score &amp; Revenue Performance</h2>
+      <p class="sec-subtitle reveal">High vs. Low Review Score</p>
+    </div>
+
+    <div class="question-box reveal">
+      <span class="qmark">?</span>
+      <p>Does critical reception translate to commercial success on Steam?</p>
+    </div>
+
+    <div class="table-scroll reveal">
+      <table>
+        <caption class="sr-only">Descriptive statistics by review score tier: count, share of dataset, mean revenue, median revenue, and mean log revenue</caption>
+        <thead>
+          <tr><th>Review Tier</th><th>Count</th><th>%</th><th>Mean Revenue</th><th>Median Revenue</th><th>Mean Log Rev.</th></tr>
+        </thead>
+        <tbody>
+          <tr><td>Overwhelmingly Positive (≥95%)</td><td>1,543</td><td>14.6%</td><td>$9.50M</td><td>$649,204</td><td>5.94</td></tr>
+          <tr><td>Very Positive (80–94%)</td><td>4,191</td><td>39.7%</td><td>$6.19M</td><td>$671,959</td><td>5.93</td></tr>
+          <tr><td>Mostly Positive (70–79%)</td><td>3,466</td><td>32.8%</td><td>$4.51M</td><td>$584,481</td><td>5.85</td></tr>
+          <tr><td>Mixed (40–69%)</td><td>1,288</td><td>12.2%</td><td>$3.82M</td><td>$448,736</td><td>5.72</td></tr>
+          <tr><td>Mostly Negative (20–39%)</td><td>74</td><td>0.7%</td><td>$2.44M</td><td>$335,443</td><td>5.48</td></tr>
+          <tr><td>Overwhelmingly Negative (&lt;20%)</td><td>6</td><td>0.1%</td><td>$836,671</td><td>$740,068</td><td>5.71</td></tr>
+        </tbody>
+      </table>
+    </div>
+    <p class="lede reveal" style="font-size:0.85rem;color:var(--text-mute);margin-top:-8px;">Note: the two lowest tiers contain only 6 and 74 games respectively. These sample sizes are too small to draw reliable conclusions.</p>
+
+    <div class="chart-card reveal">
+      <div class="chart-canvas-wrap"><canvas id="chart-reviewscore-mean-log-revenue" role="img" aria-label="Bar chart of mean log revenue by review score tier"></canvas></div>
+      <p class="chart-caption">Mean log revenue across all six review score tiers</p>
+    </div>
+
+    <div class="pull-stat muted reveal">
+      <div class="num">r = −0.10</div>
+      <div class="cap">Review score's correlation with log revenue. Near zero, and the weakest relationship found anywhere in this project.</div>
+    </div>
+
+    <div class="two-col">
+      <div class="card reveal reveal-delay-1">
+        <h4>Correlation &amp; Significance</h4>
+        <p>Very Positive vs. Overwhelmingly Positive was <b style="color:var(--text)">not significant</b> (p = 0.9986). The two top tiers are functionally equivalent in revenue.</p>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <h4>Outliers Drive the Mean</h4>
+        <p>The Overwhelmingly Positive tier's mean ($9.50M) vastly exceeds its median ($649,204). Its elevated average is driven by blockbuster outliers, not broad success across the tier.</p>
+      </div>
+    </div>
+
+    <div class="takeaway reveal">
+      <h4>Key Takeaway</h4>
+      <p>Review score alone is a weak, unreliable revenue lever. Most revenue differentiation comes from price and playtime, not critical reception. A "good" review score provides limited advantage over a merely "mixed" one.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 03 PREDICTIVE MODELING ================= -->
+<section class="alt" id="modeling">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="big-num reveal">03.</span>
+      <h2 class="sec-title reveal">Predictive Modeling</h2>
+      <p class="lede reveal reveal-delay-1">Using data to identify which game characteristics most strongly predict Steam revenue and by how much, starting with a structural regression model and then a Random Forest for nonlinear patterns and interactions.</p>
+    </div>
+
+    <!-- Regression -->
+    <div class="subsection-label reveal">Model 1</div>
+    <h3 class="sec-title reveal" style="font-size:1.6rem;margin-bottom:16px;">Regression Analysis</h3>
+    <p class="lede reveal reveal-delay-1">Final reduced model (n = 10,540, after removing 40 outlier observations):</p>
+    <div class="model-formula reveal">log_revenue ~ sqrt_price + log_avgPlaytime + publisher_Indie</div>
+
+    <div class="table-scroll reveal">
+      <table>
+        <caption class="sr-only">Regression model predictors with their coefficient estimates and p-values</caption>
+        <thead><tr><th>Predictor</th><th>Estimate (β)</th><th>p-value</th></tr></thead>
+        <tbody>
+          <tr><td>Intercept</td><td>4.615</td><td>&lt; 2e-16</td></tr>
+          <tr><td>sqrt_price</td><td>0.243</td><td>&lt; 2e-16</td></tr>
+          <tr><td>log_avgPlaytime</td><td>0.553</td><td>&lt; 2e-16</td></tr>
+          <tr><td>publisher_Indie</td><td>−0.358</td><td>&lt; 2e-16</td></tr>
+        </tbody>
+      </table>
+    </div>
+
+    <div class="two-col">
+      <div class="stat-card reveal reveal-delay-1">
+        <div class="stat-num">0.488</div>
+        <div class="stat-label">R² / Adjusted R²</div>
+        <div class="stat-sub">F(3, 10525) = 3341, p &lt; 2.2e-16</div>
+      </div>
+      <div class="card reveal reveal-delay-2">
+        <h4>Key Findings</h4>
+        <p>Playtime is the strongest positive driver of revenue. Price is independently significant, not just a proxy for AAA status. Indie games earn significantly less even holding price and playtime constant.</p>
+      </div>
+    </div>
+
+    <!-- Random Forest -->
+    <div class="subsection">
+      <div class="subsection-label reveal">Model 2</div>
+      <h3 class="sec-title reveal" style="font-size:1.6rem;margin-bottom:16px;">Random Forest</h3>
+      <p class="lede reveal reveal-delay-1">A Random Forest regression model capturing nonlinear patterns and complex variable interactions. Predictors: publisher class, price tier, review tier, price, review score, average playtime, review count, and wishlists. Direct revenue-linked fields were excluded to avoid leakage.</p>
+
+      <p class="lede reveal" style="margin-top:20px;font-size:0.9rem;">10,572 complete observations · 80/20 train/test split stratified by publisher class (8,487 train / 2,085 test) · 500 trees · mtry = 2</p>
+
+      <div class="perf-row reveal">
+        <div class="perf-card">
+          <div class="num">0.907</div>
+          <div class="label">R²</div>
+          <div class="sub">Variation explained on test set</div>
+        </div>
+        <div class="perf-card">
+          <div class="num">0.242</div>
+          <div class="label">RMSE</div>
+          <div class="sub">Root mean squared error</div>
+        </div>
+        <div class="perf-card">
+          <div class="num">0.189</div>
+          <div class="label">MAE</div>
+          <div class="sub">Mean absolute error</div>
+        </div>
+      </div>
+
+      <div class="chart-card large reveal">
+        <div class="chart-canvas-wrap"><canvas id="chart-rf-feature-importance" role="img" aria-label="Horizontal bar chart of Random Forest feature importance"></canvas></div>
+        <p class="chart-caption">Feature importance (% increase in MSE) across all 8 predictors</p>
+      </div>
+
+      <div class="table-scroll reveal">
+        <table>
+          <caption class="sr-only">Random Forest feature importance, ranked by percent increase in MSE</caption>
+          <thead><tr><th>Feature</th><th>Importance (% ↑ MSE)</th></tr></thead>
+          <tbody>
+            <tr><td>Review count</td><td>83.9</td></tr>
+            <tr><td>Price</td><td>61.3</td></tr>
+            <tr><td>Wishlists</td><td>49.1</td></tr>
+            <tr><td>Average playtime</td><td>42.0</td></tr>
+            <tr><td>Review score</td><td>37.6</td></tr>
+            <tr><td>Publisher class</td><td>37.1</td></tr>
+            <tr><td>Price tier</td><td>24.1</td></tr>
+            <tr><td>Review tier</td><td>22.9</td></tr>
+          </tbody>
+        </table>
+      </div>
+
+      <div class="takeaway reveal">
+        <h4>Key Takeaway</h4>
+        <p>Review count, which reflects market attention and volume of player response, is the dominant predictor of revenue, stronger than review score itself. Demand and engagement signals beat quality signals. Regression and Random Forest are complementary: together they show both what drives revenue and how strongly each factor contributes when all dimensions interact simultaneously.</p>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- ================= 04 RECOMMENDATIONS ================= -->
+<section id="recommendations">
+  <div class="wrap">
+    <div class="section-head">
+      <span class="big-num reveal">04.</span>
+      <h2 class="sec-title reveal">Recommendations</h2>
+      <p class="lede reveal reveal-delay-1">From analysis to action: what the data tells us about building successful games on Steam.</p>
+    </div>
+
+    <div class="rec-grid">
+      <div class="rec-card reveal reveal-delay-1">
+        <div class="rec-num">1</div>
+        <h4>Prioritize Engagement Above Everything</h4>
+        <p>Before optimizing price or chasing reviews, build features that keep players coming back. Playtime is the strongest predictor of revenue. Replayability, live-service content, and multiplayer are the highest-ROI investments.</p>
+      </div>
+      <div class="rec-card reveal reveal-delay-2">
+        <div class="rec-num">2</div>
+        <h4>Price Strategically</h4>
+        <p>Premium pricing ($40+) maximizes revenue, but only with AAA-level production quality and marketing reach to support it. Indie developers without that backing should aim for $20–$40 over budget pricing.</p>
+      </div>
+      <div class="rec-card reveal reveal-delay-3">
+        <div class="rec-num">3</div>
+        <h4>Indie Developers Win on Community</h4>
+        <p>Publisher scale creates a revenue gap that price alone can't close. Community-building is the lever Indie studios actually control, regardless of budget.</p>
+      </div>
+      <div class="rec-card reveal reveal-delay-4">
+        <div class="rec-num">4</div>
+        <h4>Don't Chase Review Scores Alone</h4>
+        <p>Review score does not significantly predict revenue. Resources are better spent on engagement features than on optimizing for critical reception.</p>
+      </div>
+    </div>
+
+    <div class="callout warn reveal">
+      <h4>Limitations Reminder</h4>
+      <p>Findings reflect patterns among the 10,568 games analyzed, not the full 50,000+ title Steam library. Free-to-play titles were excluded, as they carry massive revenue outliers. Revenue figures are Gamalytic estimates, not official financial records. The model is predictive, not causal.</p>
+    </div>
+  </div>
+</section>
+
+<!-- ================= CLOSING ================= -->
+<section class="closing" id="closing">
+  <div class="wrap">
+    <div class="eyebrow reveal">Thank You</div>
+    <h2 class="reveal reveal-delay-1">The Price of Play: What Makes a Steam Game Financially Successful?</h2>
+    <p class="lede reveal reveal-delay-2">Thanks for reading through Group 5's capstone project. Get in touch, or explore more of my work below.</p>
+
+    <div class="link-row reveal reveal-delay-3">
+      <a href="https://github.com/cvaranko" target="_blank" rel="noopener noreferrer" class="link-card">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M12 0C5.37 0 0 5.37 0 12c0 5.3 3.44 9.8 8.21 11.39.6.11.82-.26.82-.58 0-.29-.01-1.05-.02-2.06-3.34.73-4.04-1.61-4.04-1.61-.55-1.39-1.34-1.76-1.34-1.76-1.09-.75.08-.73.08-.73 1.21.08 1.84 1.24 1.84 1.24 1.07 1.84 2.81 1.31 3.5 1 .11-.78.42-1.31.76-1.61-2.67-.3-5.47-1.33-5.47-5.93 0-1.31.47-2.38 1.24-3.22-.12-.3-.54-1.52.12-3.18 0 0 1.01-.32 3.3 1.23a11.5 11.5 0 0 1 6 0c2.29-1.55 3.3-1.23 3.3-1.23.66 1.66.24 2.88.12 3.18.77.84 1.24 1.91 1.24 3.22 0 4.61-2.81 5.63-5.49 5.92.43.37.81 1.1.81 2.22 0 1.6-.02 2.89-.02 3.29 0 .32.21.7.83.58C20.56 21.8 24 17.3 24 12c0-6.63-5.37-12-12-12z"/></svg>
+        <span><span class="lc-title">GitHub</span><br><span class="lc-sub">View my code &amp; repos</span></span>
+      </a>
+      <a href="https://www.linkedin.com/in/carolinavaranko/" target="_blank" rel="noopener noreferrer" class="link-card">
+        <svg viewBox="0 0 24 24" fill="currentColor" aria-hidden="true"><path d="M20.45 20.45h-3.55v-5.57c0-1.33-.02-3.03-1.85-3.03-1.85 0-2.14 1.44-2.14 2.94v5.66H9.36V9h3.41v1.56h.05c.47-.9 1.63-1.85 3.36-1.85 3.6 0 4.26 2.37 4.26 5.45v6.29zM5.34 7.43a2.06 2.06 0 1 1 0-4.12 2.06 2.06 0 0 1 0 4.12zM7.12 20.45H3.56V9h3.56v11.45z"/></svg>
+        <span><span class="lc-title">LinkedIn</span><br><span class="lc-sub">Connect with me</span></span>
+      </a>
+    </div>
+  </div>
+</section>
+
+</main>
+
+<footer>
+  <div class="wrap">
+    Group 5 <span class="sep">·</span> DATA 485 <span class="sep">·</span> Data Analytics Capstone <span class="sep">·</span> Spring 2026
+  </div>
+</footer>
+
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script>
+(function(){
+  if (typeof Chart === 'undefined') return;
+  var css = getComputedStyle(document.documentElement);
+  var cv = function(name){ return css.getPropertyValue(name).trim(); };
+  var textDim = cv('--text-dim') || '#a9b7cc';
+  var textMute = cv('--text-mute') || '#6d7c96';
+  var textColor = cv('--text') || '#eef2f8';
+  var borderSoft = cv('--border-soft') || '#1a2740';
+  var surface2 = cv('--surface-2') || '#182543';
+  var surface = cv('--surface') || '#111a2c';
+  var border = cv('--border') || '#22304d';
+
+  Chart.defaults.font.family = "'Inter', system-ui, sans-serif";
+  Chart.defaults.color = textDim;
+  Chart.defaults.font.size = 12.5;
+
+  var tooltipBase = {
+    backgroundColor: surface2,
+    titleColor: textColor,
+    bodyColor: textDim,
+    borderColor: border,
+    borderWidth: 1,
+    padding: 12,
+    cornerRadius: 8,
+    titleFont: { weight: '700', size: 13 },
+    bodyFont: { size: 12.5 },
+    displayColors: true,
+    boxPadding: 4
+  };
+  function withTooltip(callbacks, extra){
+    var t = Object.assign({}, tooltipBase, extra || {});
+    t.callbacks = callbacks;
+    return t;
+  }
+
+  var gridColor = borderSoft;
+
+  // Fixed identity colors — same publisher class always gets the same color,
+  // regardless of chart or sort order.
+  var PUB_COLORS = { Indie: '#5eead4', AA: '#14b8a6', AAA: '#0f766e' };
+
+  function drawTopLabels(chart, textFor){
+    var ctx = chart.ctx;
+    ctx.save();
+    ctx.fillStyle = textColor;
+    ctx.font = "700 13px Inter, sans-serif";
+    ctx.textAlign = 'center';
+    chart.getDatasetMeta(0).data.forEach(function(bar, i){
+      ctx.fillText(textFor(i), bar.x, bar.y - 8);
+    });
+    ctx.restore();
+  }
+  function drawEndLabels(chart, textFor){
+    var ctx = chart.ctx;
+    ctx.save();
+    ctx.fillStyle = textColor;
+    ctx.font = "700 12px Inter, sans-serif";
+    ctx.textAlign = 'left';
+    chart.getDatasetMeta(0).data.forEach(function(bar, i){
+      ctx.fillText(textFor(i), bar.x + 8, bar.y + 4);
+    });
+    ctx.restore();
+  }
+
+  // 1. Dataset composition by publisher class (donut)
+  (function(){
+    var el = document.getElementById('chart-pubclass-composition');
+    if(!el) return;
+    var labels = ['Indie','AA','AAA'];
+    var shares = [70.3, 20.0, 9.7];
+    var titles = [7440, 2112, 1028];
+    new Chart(el, {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{
+        data: shares,
+        backgroundColor: labels.map(function(l){ return PUB_COLORS[l]; }),
+        borderColor: surface,
+        borderWidth: 2,
+        hoverOffset: 6
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, color: textDim } },
+          tooltip: withTooltip({
+            label: function(ctx){
+              return ' ' + ctx.label + ': ' + shares[ctx.dataIndex] + '% of titles (' + titles[ctx.dataIndex].toLocaleString('en-US') + ' games)';
+            }
+          })
+        }
+      }
+    });
+  })();
+
+  // 2. Revenue share by publisher class (donut)
+  (function(){
+    var el = document.getElementById('chart-pubclass-revenue-share');
+    if(!el) return;
+    var labels = ['Indie','AA','AAA'];
+    var shares = [19.5, 36.2, 44.3];
+    var revenue = ['~$12.0B','~$22.2B','~$27.2B'];
+    new Chart(el, {
+      type: 'doughnut',
+      data: { labels: labels, datasets: [{
+        data: shares,
+        backgroundColor: labels.map(function(l){ return PUB_COLORS[l]; }),
+        borderColor: surface,
+        borderWidth: 2,
+        hoverOffset: 6
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false, cutout: '62%',
+        plugins: {
+          legend: { position: 'bottom', labels: { usePointStyle: true, pointStyle: 'circle', padding: 16, color: textDim } },
+          tooltip: withTooltip({
+            label: function(ctx){
+              return ' ' + ctx.label + ': ' + shares[ctx.dataIndex] + '% of revenue (' + revenue[ctx.dataIndex] + ')';
+            }
+          })
+        }
+      }
+    });
+  })();
+
+  // 3. Median revenue by publisher class (bar, descending AAA -> Indie)
+  (function(){
+    var el = document.getElementById('chart-pubclass-median-revenue');
+    if(!el) return;
+    var labels = ['AAA','AA','Indie'];
+    var values = [5100000, 1400000, 407200];
+    var display = ['~$5.1M','~$1.4M','~$407.2K'];
+    new Chart(el, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{
+        data: values,
+        backgroundColor: labels.map(function(l){ return PUB_COLORS[l]; }),
+        borderRadius: 6, borderSkipped: false, maxBarThickness: 90
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 24 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: withTooltip({
+            title: function(items){ return items[0].label + ' publishers'; },
+            label: function(ctx){ return ' Median revenue: ' + display[ctx.dataIndex]; }
+          })
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textDim } },
+          y: { grid: { color: gridColor }, ticks: { color: textMute, callback: function(v){ return '$' + (v/1e6).toFixed(1) + 'M'; } }, beginAtZero: true }
+        }
+      },
+      plugins: [{
+        id: 'medianRevLabels',
+        afterDatasetsDraw: function(chart){ drawTopLabels(chart, function(i){ return display[i]; }); }
+      }]
+    });
+  })();
+
+  // 4. Price tier — mean log revenue (Carolina's featured chart)
+  (function(){
+    var el = document.getElementById('chart-pricetier-mean-log-revenue');
+    if(!el) return;
+    var labels = ['Under $20', '$20–$40', '$40+'];
+    var logRev = [5.67, 6.40, 6.93];
+    var meanRev = [2547191, 10723926, 35297188];
+    var medianRev = [392892, 2056084, 7354687];
+    var colors = ['#f9c976', '#f6a823', '#a66c07'];
+    var fmtUSD = function(n){ return '$' + n.toLocaleString('en-US'); };
+    new Chart(el, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{
+        data: logRev,
+        backgroundColor: colors,
+        borderRadius: 8, borderSkipped: false, maxBarThickness: 120
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 28 } },
+        animation: { duration: 900, easing: 'easeOutQuart' },
+        plugins: {
+          legend: { display: false },
+          tooltip: withTooltip({
+            title: function(items){ return items[0].label; },
+            label: function(ctx){
+              var i = ctx.dataIndex;
+              return [
+                'Mean log revenue: ' + logRev[i].toFixed(2),
+                'Mean revenue: ' + fmtUSD(meanRev[i]),
+                'Median revenue: ' + fmtUSD(medianRev[i])
+              ];
+            }
+          }, { padding: 14 })
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textColor, font: { weight: '600' } } },
+          y: { grid: { color: gridColor }, ticks: { color: textMute }, min: 5, suggestedMax: 7.3 }
+        }
+      },
+      plugins: [{
+        id: 'priceTierLabels',
+        afterDatasetsDraw: function(chart){ drawTopLabels(chart, function(i){ return logRev[i].toFixed(2); }); }
+      }]
+    });
+  })();
+
+  // 5. Review score tier — mean log revenue
+  (function(){
+    var el = document.getElementById('chart-reviewscore-mean-log-revenue');
+    if(!el) return;
+    var labels = [['Overwhelmingly','Negative'], ['Mostly','Negative'], ['Mixed'], ['Mostly','Positive'], ['Very','Positive'], ['Overwhelmingly','Positive']];
+    var shortLabels = ['Overwhelmingly Negative','Mostly Negative','Mixed','Mostly Positive','Very Positive','Overwhelmingly Positive'];
+    var logRev = [5.71, 5.48, 5.72, 5.85, 5.93, 5.94];
+    var meanRevLabel = ['$836,671', '$2.44M', '$3.82M', '$4.51M', '$6.19M', '$9.50M'];
+    var medianRevLabel = ['$740,068', '$335,443', '$448,736', '$584,481', '$671,959', '$649,204'];
+    var counts = [6, 74, 1288, 3466, 4191, 1543];
+    var pcts = ['0.1%', '0.7%', '12.2%', '32.8%', '39.7%', '14.6%'];
+    var colors = ['#85e9dc', '#25cfb9', '#1eab99', '#18897a', '#147063', '#105a50'];
+    new Chart(el, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{
+        data: logRev,
+        backgroundColor: colors,
+        borderRadius: 6, borderSkipped: false, maxBarThickness: 70
+      }]},
+      options: {
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { top: 24 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: withTooltip({
+            title: function(items){ return shortLabels[items[0].dataIndex]; },
+            label: function(ctx){
+              var i = ctx.dataIndex;
+              var lines = [
+                'Mean log revenue: ' + logRev[i].toFixed(2),
+                'Mean revenue: ' + meanRevLabel[i],
+                'Median revenue: ' + medianRevLabel[i],
+                counts[i].toLocaleString('en-US') + ' games (' + pcts[i] + ' of dataset)'
+              ];
+              if(counts[i] < 100) lines.push('Small sample size, interpret with caution');
+              return lines;
+            }
+          })
+        },
+        scales: {
+          x: { grid: { display: false }, ticks: { color: textMute, autoSkip: false, maxRotation: 0, font: { size: 10.5 } } },
+          y: { grid: { color: gridColor }, ticks: { color: textMute }, min: 5, suggestedMax: 6.1 }
+        }
+      },
+      plugins: [{
+        id: 'reviewTierLabels',
+        afterDatasetsDraw: function(chart){ drawTopLabels(chart, function(i){ return logRev[i].toFixed(2); }); }
+      }]
+    });
+  })();
+
+  // 6. Random Forest feature importance (horizontal bar, all 8 features)
+  (function(){
+    var el = document.getElementById('chart-rf-feature-importance');
+    if(!el) return;
+    var labels = ['Review count','Price','Wishlists','Average playtime','Review score','Publisher class','Price tier','Review tier'];
+    var values = [83.9, 61.3, 49.1, 42.0, 37.6, 37.1, 24.1, 22.9];
+    var colors = ['#0f564d','#136d61','#178475','#1b9b8a','#20b39f','#24cbb5','#56e1cf','#a4efe5'];
+    new Chart(el, {
+      type: 'bar',
+      data: { labels: labels, datasets: [{
+        data: values,
+        backgroundColor: colors,
+        borderRadius: 6, borderSkipped: false, maxBarThickness: 26
+      }]},
+      options: {
+        indexAxis: 'y',
+        responsive: true, maintainAspectRatio: false,
+        layout: { padding: { right: 46 } },
+        plugins: {
+          legend: { display: false },
+          tooltip: withTooltip({
+            label: function(ctx){ return ' ' + values[ctx.dataIndex] + '% increase in MSE'; }
+          })
+        },
+        scales: {
+          x: { grid: { color: gridColor }, ticks: { color: textMute, callback: function(v){ return v + '%'; } }, beginAtZero: true, suggestedMax: 92 },
+          y: { grid: { display: false }, ticks: { color: textColor } }
+        }
+      },
+      plugins: [{
+        id: 'rfImportanceLabels',
+        afterDatasetsDraw: function(chart){ drawEndLabels(chart, function(i){ return values[i] + '%'; }); }
+      }]
+    });
+  })();
+})();
+</script>
+
+<script>
+(function(){
+  // Mobile nav toggle
+  var toggle = document.getElementById('navToggle');
+  var links = document.getElementById('navLinks');
+  toggle.addEventListener('click', function(){
+    var isOpen = toggle.classList.toggle('open');
+    links.classList.toggle('open');
+    toggle.setAttribute('aria-expanded', isOpen ? 'true' : 'false');
+  });
+  links.querySelectorAll('a').forEach(function(a){
+    a.addEventListener('click', function(){
+      toggle.classList.remove('open');
+      links.classList.remove('open');
+      toggle.setAttribute('aria-expanded', 'false');
+    });
+  });
+
+  // Scroll-reveal
+  var revealEls = document.querySelectorAll('.reveal');
+  var io = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      if(entry.isIntersecting){
+        entry.target.classList.add('is-visible');
+        io.unobserve(entry.target);
+      }
+    });
+  }, {threshold:0.12, rootMargin:'0px 0px -60px 0px'});
+  revealEls.forEach(function(el){ io.observe(el); });
+
+  // Active nav link on scroll
+  var sections = document.querySelectorAll('section[id]');
+  var navAnchors = links.querySelectorAll('a');
+  var navMap = {};
+  navAnchors.forEach(function(a){ navMap[a.getAttribute('href').slice(1)] = a; });
+
+  var sectionIO = new IntersectionObserver(function(entries){
+    entries.forEach(function(entry){
+      var id = entry.target.id;
+      var link = navMap[id];
+      if(!link) return;
+      if(entry.isIntersecting){
+        navAnchors.forEach(function(a){ a.classList.remove('active'); });
+        link.classList.add('active');
+      }
+    });
+  }, {rootMargin:'-45% 0px -50% 0px', threshold:0});
+  sections.forEach(function(s){ sectionIO.observe(s); });
+})();
+</script>
+
+</body>
+</html>
